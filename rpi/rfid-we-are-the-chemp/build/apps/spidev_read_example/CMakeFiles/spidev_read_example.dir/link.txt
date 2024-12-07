@@ -1,0 +1,1 @@
+/usr/bin/c++ -rdynamic CMakeFiles/spidev_read_example.dir/main.cc.o -o spidev_read_example  ../../external/spidevpp/libs/spidevpp/libspidevpp.a ../../libs/mfrc522/libmfrc522.a -lmosquitto 

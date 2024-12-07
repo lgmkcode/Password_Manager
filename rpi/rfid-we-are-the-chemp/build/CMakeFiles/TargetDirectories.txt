@@ -1,0 +1,15 @@
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/CMakeFiles/edit_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/CMakeFiles/rebuild_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/external/spidevpp/libs/CMakeFiles/edit_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/external/spidevpp/libs/CMakeFiles/rebuild_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/external/spidevpp/libs/spidevpp/CMakeFiles/spidevpp.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/external/spidevpp/libs/spidevpp/CMakeFiles/edit_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/external/spidevpp/libs/spidevpp/CMakeFiles/rebuild_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/libs/CMakeFiles/edit_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/libs/CMakeFiles/rebuild_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/libs/mfrc522/CMakeFiles/mfrc522.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/libs/mfrc522/CMakeFiles/edit_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/libs/mfrc522/CMakeFiles/rebuild_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/apps/spidev_read_example/CMakeFiles/spidev_read_example.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/apps/spidev_read_example/CMakeFiles/edit_cache.dir
+/home/lgmk/Desktop/rfid-we-are-the-chemp/build/apps/spidev_read_example/CMakeFiles/rebuild_cache.dir

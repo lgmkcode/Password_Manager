@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmfrc522.a CMakeFiles/mfrc522.dir/mfrc522.cc.o
+/usr/bin/ranlib libmfrc522.a

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libspidevpp.a CMakeFiles/spidevpp.dir/spi.cc.o CMakeFiles/spidevpp.dir/gpio.cc.o
+/usr/bin/ranlib libspidevpp.a
