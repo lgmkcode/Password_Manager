@@ -1,39 +1,39 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QtMqtt/QMqttClient>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QFile>
+#include <QDebug>
 
-// Global MQTT istemcinin tanımı
-QMqttClient* globalMqttClient = nullptr;
+namespace {
+// Configuration constants
+const QString MQTT_HOST = "192.168.207.93";
+const int MQTT_PORT = 9999;
+const QString JSON_FILE_PATH = "/home/lgmk/Desktop/Password_Project_Mqtt/pc/password_pc.json";
+
+// MQTT Topics
+const QString TOPIC_PC_TO_RPI_FLAG = "pc-to-rpi-flag";
+const QString TOPIC_PC_TO_RPI_DATA = "pc-to-rpi-data";
+const QString TOPIC_RPI_TO_PC_DATA = "rpi-to-pc-data";
+
+// UI Messages
+const QString MSG_WELCOME = "Password manager sistemine hoş geldiniz\n"
+                            "Şifrelerinizi indirmek için download password butonuna basın ve yönergeleri takip edin.";
+const QString MSG_UPLOAD_SUCCESS = "Şifreleriniz database'e gönderilmiştir";
+const QString MSG_DOWNLOAD_PROMPT = "Kartınızı okutun ardından pin kodunuzu giriniz.";
+const QString MSG_SAVE_SUCCESS = "Şifreleriniz kaydedildi\n"
+                                 "Upload password butonuna basarak şifrelerinizi database'e gönderebilirsiniz.";
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , mqttClient(new QMqttClient(this))
 {
     ui->setupUi(this);
-
-    // MQTT istemcisini oluşturma ve başlatma
-    globalMqttClient = new QMqttClient(this);
-    globalMqttClient->setHostname("192.168.250.93");
-    globalMqttClient->setPort(9999);
-
-    // Durum değişikliklerini kontrol etmek için sinyal-slot bağlantıları
-    connect(globalMqttClient, &QMqttClient::connected, this, []() {
-        qDebug() << "MQTT Client connected.";
-    });
-    connect(globalMqttClient, &QMqttClient::disconnected, this, []() {
-        qDebug() << "MQTT Client disconnected.";
-    });
-
-    // MQTT istemcisine bağlan
-    globalMqttClient->connectToHost();
-
-    // Abone olma işlemini constructor'da yapalım
-    subscribeToTopic("pc-to-rpi-flag");
-    subscribeToTopic("pc-to-rpi-data");
-    subscribeToTopic("rpi-to-pc-data");
-    //subscribeToTopic("rpi-to-pc-flag");
-
-    ui->plainTextEdit->setPlainText("Password manager sistemine hoş geldiniz\nŞifrelerinizi indirmek için download password butonuna basın ve yönergeleri takip edin.");
+    setupMqttClient();
+    setupInitialUI();
 }
 
 MainWindow::~MainWindow()
@@ -41,179 +41,134 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-void MainWindow::subscribeToTopic(const QString &topic)
+void MainWindow::setupMqttClient()
 {
-    if (globalMqttClient)
-    {
-        globalMqttClient->subscribe(topic);
+    mqttClient->setHostname(MQTT_HOST);
+    mqttClient->setPort(MQTT_PORT);
+
+    // MQTT bağlantısı kurulduktan sonra topic'lere abone ol
+    connect(mqttClient, &QMqttClient::connected, this, [this]{
+        qDebug() << "MQTT Client connected.";
+        qDebug() << "MQTT Client State:" << mqttClient->state();
+
+        // Bağlantı kurulduktan sonra topic'lere abone ol
+        subscribeToTopics({
+            TOPIC_PC_TO_RPI_FLAG,
+            TOPIC_PC_TO_RPI_DATA,
+            TOPIC_RPI_TO_PC_DATA
+        });
+    });
+
+    connect(mqttClient, &QMqttClient::disconnected, this, []{
+        qDebug() << "MQTT Client disconnected.";
+    });
+
+    mqttClient->connectToHost();
+}
+
+void MainWindow::setupInitialUI()
+{
+    ui->plainTextEdit->setPlainText(MSG_WELCOME);
+}
+
+void MainWindow::subscribeToTopics(const QStringList &topics)
+{
+    for (const QString &topic : topics) {
+        auto subscription = mqttClient->subscribe(topic);
+        if (subscription) {
+            qDebug() << "Successfully subscribed to:" << topic;
+        } else {
+            qDebug() << "Failed to subscribe to:" << topic;
+        }
     }
 }
 
+bool MainWindow::publishMessage(const QString &topic, const QByteArray &message)
+{
+    if (mqttClient->state() != QMqttClient::Connected) {
+        qDebug() << "MQTT Client not connected!";
+        return false;
+    }
 
-void MainWindow::on_pushButton_clicked()
-{  //////////////// upload button ////////////////////
+    if (mqttClient->publish(topic, message) == -1) {
+        qDebug() << "Failed to publish message to topic:" << topic;
+        return false;
+    }
 
-    ////////////////////////////// SEND START FLAG ////////////////////////////////
+    qDebug() << "Successfully published message to topic:" << topic;
+    return true;
+}
 
-    // JSON dosyasını okuma
-    QFile file("/home/lgmk/Desktop/Password_Project_Mqtt/pc/password_pc.json");
+bool MainWindow::saveJsonToFile(const QByteArray &jsonData, const QString &filePath)
+{
+    QJsonParseError parseError;
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &parseError);
+
+    if (parseError.error != QJsonParseError::NoError) {
+        qDebug() << "JSON parse error:" << parseError.errorString();
+        return false;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qDebug() << "Failed to open file for writing:" << filePath;
+        return false;
+    }
+
+    file.write(jsonDoc.toJson(QJsonDocument::Indented));
+    file.close();
+    return true;
+}
+
+void MainWindow::on_pushButton_clicked()  // Upload button
+{
+    QFile file(JSON_FILE_PATH);
     if (!file.open(QIODevice::ReadOnly)) {
-        qDebug() << "JSON dosyası açılamadı";
+        qDebug() << "Failed to open JSON file for reading";
         return;
     }
+
     QByteArray jsonData = file.readAll();
     file.close();
 
-    // Bağlantı sağlandığında mesaj gönderme
-    if (globalMqttClient->state() == QMqttClient::Connected) {
-        QString topic = "pc-to-rpi-data";
-        if (globalMqttClient->publish(topic, jsonData) == -1) {
-            qDebug() << "Mesaj gönderilemedi!";
-        } else {
-            qDebug() << "Mesaj gönderildi";
-            if (globalMqttClient->state() == QMqttClient::Connected) {
-                QString topic = "pc-to-rpi-flag";
-                if (globalMqttClient->publish(topic, "send_start_flag") == -1) {
-                    qDebug() << "Flag gönderilemedi!";
-                } else {
-                    qDebug() << "Flag gönderildi";
-                }
-            } else {
-                connect(globalMqttClient, &QMqttClient::connected, this, [=]() {
-                    qDebug() << "MQTT Client connected - Sending message";
-                    QString topic = "pc-to-rpi-flag";
-                    if (globalMqttClient->publish(topic, "send_start_flag") == -1) {
-                        qDebug() << "Flag gönderilemedi!";
-                    } else {
-                        qDebug() << "Flag gönderildi";
-                    }
-                });
-            }
-        }
-    } else {
-        connect(globalMqttClient, &QMqttClient::connected, this, [=]() {
-            qDebug() << "MQTT Client connected - Sending message";
-            QString topic = "pc-to-rpi-data";
-            if (globalMqttClient->publish(topic, jsonData) == -1) {
-                qDebug() << "Mesaj gönderilemedi!";
-            } else {
-                qDebug() << "Mesaj gönderildi";
-                if (globalMqttClient->state() == QMqttClient::Connected) {
-                    QString topic = "pc-to-rpi-flag";
-                    if (globalMqttClient->publish(topic, "send_start_flag") == -1) {
-                        qDebug() << "Flag gönderilemedi!";
-                    } else {
-                        qDebug() << "Flag gönderildi";
-                    }
-                } else {
-                    connect(globalMqttClient, &QMqttClient::connected, this, [=]() {
-                        qDebug() << "MQTT Client connected - Sending message";
-                        QString topic = "pc-to-rpi-flag";
-                        if (globalMqttClient->publish(topic, "send_start_flag") == -1) {
-                            qDebug() << "Flag gönderilemedi!";
-                        } else {
-                            qDebug() << "Flag gönderildi";
-                        }
-                    });
-                }
-            }
-        });
+    if (publishMessage(TOPIC_PC_TO_RPI_DATA, jsonData)) {
+        publishMessage(TOPIC_PC_TO_RPI_FLAG, "send_start_flag");
+        ui->plainTextEdit->setPlainText(MSG_UPLOAD_SUCCESS);
     }
-    ui->plainTextEdit->setPlainText("Şifreleriniz database'e gönderilmiştir");
 }
 
+void MainWindow::on_pushButton_2_clicked()  // Download button
+{
+    ui->plainTextEdit->setPlainText(MSG_DOWNLOAD_PROMPT);
 
-void MainWindow::on_pushButton_2_clicked()
-{   //////////// download button ///////////////
-    ui->plainTextEdit->setPlainText("Kartınızı okutun ardından pin kodunuzu giriniz.");
-    ////////////////////////////// PULL START FLAG ////////////////////////////////
-
-    // Bağlantı sağlandığında mesaj gönderme
-    if (globalMqttClient->state() == QMqttClient::Connected) {
-        QString topic = "pc-to-rpi-flag";
-        if (globalMqttClient->publish(topic, "pull-start-flag") == -1) {
-            qDebug() << "Flag gönderilemedi!";
-        } else {
-            qDebug() << "Flag gönderildi";
-        }
-    } else {
-        connect(globalMqttClient, &QMqttClient::connected, this, [=]() {
-            qDebug() << "MQTT Client connected - Sending message";
-            QString topic = "pc-to-rpi-flag";
-            if (globalMqttClient->publish(topic, "pull-start-flag") == -1) {
-                qDebug() << "Flag gönderilemedi!";
-            } else {
-                qDebug() << "Flag gönderildi";
-            }
-        });
+    if (publishMessage(TOPIC_PC_TO_RPI_FLAG, "pull-start-flag")) {
+        setupMessageHandler();
     }
-
-    ////////////////////////////// RECEIVE DATA FROM rpi-to-pc-data ////////////////////////////////
-
-    connect(globalMqttClient, &QMqttClient::messageReceived, this, [=](const QByteArray &message, const QMqttTopicName &topicName) {
-        qDebug() << "Im here";
-        qDebug() << "Topic: " << topicName.name();
-        QString topic = topicName.name();
-        if (topic == "rpi-to-pc-data") {
-                QJsonParseError parseError;
-                QJsonDocument jsonDoc = QJsonDocument::fromJson(message, &parseError);
-
-                if (parseError.error != QJsonParseError::NoError)
-                {
-                    qDebug() << "JSON parse error:" << parseError.errorString();
-                    return;
-                }
-
-                QFile jsonFile("/home/lgmk/Desktop/Password_Project_Mqtt/pc/password_pc.json");
-                if (!jsonFile.open(QIODevice::WriteOnly | QIODevice::Text))
-                {
-                    qDebug() << "Failed to open JSON file for writing.";
-                    return;
-                }
-
-                jsonFile.write(jsonDoc.toJson(QJsonDocument::Indented));
-                jsonFile.flush();
-                jsonFile.close();
-
-                qDebug() << "JSON file updated successfully.";
-
-                ui->plainTextEdit->setPlainText(QString(jsonDoc.toJson(QJsonDocument::Indented)));
-
-                disconnect(globalMqttClient, &QMqttClient::messageReceived, this, nullptr);
-        }
-    });
-
-    // "rpi-to-pc-data" konusuna abone oluyoruz
-    subscribeToTopic("rpi-to-pc-data");
 }
 
-void MainWindow::on_pushButton_3_clicked()
-{ ////////////////// save button//////////////////////
+void MainWindow::setupMessageHandler()
+{
+    connect(mqttClient, &QMqttClient::messageReceived, this,
+            [this](const QByteArray &message, const QMqttTopicName &topicName) {
+                qDebug() << "Received message on topic:" << topicName.name();
+                qDebug() << "Message content:" << message;
 
-    // QPlainTextEdit'teki JSON formatındaki metni al
+                if (topicName.name() == TOPIC_RPI_TO_PC_DATA) {
+                    if (saveJsonToFile(message, JSON_FILE_PATH)) {
+                        QJsonDocument jsonDoc = QJsonDocument::fromJson(message);
+                        ui->plainTextEdit->setPlainText(QString(jsonDoc.toJson(QJsonDocument::Indented)));
+                        qDebug() << "Successfully processed and displayed message";
+                    }
+                    // Disconnect only after successful processing
+                    disconnect(mqttClient, &QMqttClient::messageReceived, this, nullptr);
+                }
+            });
+}
+
+void MainWindow::on_pushButton_3_clicked()  // Save button
+{
     QString text = ui->plainTextEdit->toPlainText();
-
-    // JSON doğrulaması yap
-    QJsonParseError parseError;
-    QJsonDocument jsonDoc = QJsonDocument::fromJson(text.toUtf8(), &parseError);
-
-    if (parseError.error != QJsonParseError::NoError) {
-        // JSON formatı hatalıysa hata mesajı yazdır
-        qWarning() << "Geçersiz JSON formatı:" << parseError.errorString();
-        return;
+    if (saveJsonToFile(text.toUtf8(), JSON_FILE_PATH)) {
+        ui->plainTextEdit->setPlainText(MSG_SAVE_SUCCESS);
     }
-
-    // Dosyayı yazma modunda aç
-    QFile file("/home/lgmk/Desktop/Password_Project_Mqtt/pc/password_pc.json");
-    if (!file.open(QIODevice::WriteOnly)) {
-        qWarning("JSON dosyası açılamadı!");
-        return;
-    }
-
-    // JSON dökümanını dosyaya yaz
-    file.write(jsonDoc.toJson());
-    file.close();
-    ui->plainTextEdit->setPlainText("Şifreleriniz kaydedildi\nUpload password butonuna basarak şifrelerinizi database'e gönderebilirsiniz.");
-    qDebug() << "JSON dosyaya başarıyla kaydedildi.";
 }
