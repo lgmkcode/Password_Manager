@@ -1,3 +1,54 @@
+"""
+RFID ve PIN Tabanlı Kimlik Doğrulama Sistemi
+-------------------------------------------
+
+Bu program, Raspberry Pi üzerinde çalışan RFID ve PIN tabanlı bir kimlik doğrulama
+sistemini yönetir. Firebase ve MQTT protokolü kullanılarak çeşitli cihazlar arasında
+güvenli bir kimlik doğrulama sağlar.
+
+Sistem Özellikleri:
+1. Firebase Entegrasyonu:
+   - Kullanıcı verilerini Firebase veritabanından çeker
+   - Verileri yerel JSON dosyalarında saklar
+
+2. MQTT İletişimi:
+   - PC ile Raspberry Pi arasında veri alışverişi sağlar
+   - RFID ve PIN verilerini dinler
+   - Doğrulama sonuçlarını iletir
+   - Broker IP: 192.168.13.93, Port: 9999
+
+3. LED Göstergeler:
+   - RFID LED (GPIO 17): RFID doğrulaması başarılı
+   - PIN LED (GPIO 22): PIN doğrulaması başarılı
+   - Hata LED (GPIO 4): Doğrulama hatası
+
+4. Güvenlik Doğrulamaları:
+   - RFID kart kontrolü
+   - PIN doğrulaması
+   - İki faktörlü kimlik doğrulama (RFID + PIN)
+
+Çalışma Akışı:
+1. Program MQTT broker'a bağlanır
+2. Firebase'den kullanıcı verilerini çeker
+3. RFID okuyucudan gelen verileri kontrol eder
+4. PIN girişlerini doğrular
+5. Sonuçları LED'ler ile gösterir
+6. Doğrulama başarılı ise kullanıcı verilerini PC'ye iletir
+
+Gereksinimler:
+- paho-mqtt kütüphanesi
+- firebase-admin kütüphanesi
+- gpiozero kütüphanesi
+- Firebase servis hesabı kimlik bilgileri (JSON)
+- Çalışan bir MQTT broker
+
+Hata Yönetimi:
+- Tüm kritik işlemler try-except blokları ile korunur
+- Hata durumları konsola loglanır
+- LED'ler ile görsel geri bildirim sağlanır
+
+"""
+
 import sys
 import json
 import time
@@ -112,7 +163,7 @@ def start_mqtt():
     client = paho.Client()
     client.on_message = on_message
 
-    if client.connect("192.168.207.93", 9999, 60) != 0:
+    if client.connect("192.168.13.93", 9999, 60) != 0:
         print("MQTT broker'a bağlanılamadı!")
         sys.exit(1)
 
