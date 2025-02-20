@@ -1,3 +1,55 @@
+"""
+Firebase ve MQTT Veri Senkronizasyon Sistemi
+------------------------------------------
+
+Bu program, PC ve Firebase Realtime Database arasında veri senkronizasyonunu 
+sağlayan bir ara katman olarak çalışır. MQTT protokolü üzerinden gelen verileri
+alır, işler ve Firebase veritabanına aktarır.
+
+Sistem Özellikleri:
+1. MQTT İletişimi:
+   - PC'den gelen JSON verilerini dinler
+   - İki ayrı topic üzerinden haberleşme:
+     * pc-to-rpi-data: JSON verilerinin alındığı kanal
+     * pc-to-rpi-flag: Senkronizasyon tetikleyici kanalı
+   - Broker Bağlantısı:
+     * IP: 192.168.207.93
+     * Port: 9999
+
+2. Dosya İşlemleri:
+   - JSON verilerini yerel dosyada saklar (password_rpi.json)
+   - Mevcut kullanıcı verilerini koruyarak güncelleme yapar
+   - UTF-8 karakter desteği ile çoklu dil desteği
+
+3. Firebase Entegrasyonu:
+   - Realtime Database bağlantısı
+   - Otomatik veri senkronizasyonu
+   - Güvenli kimlik doğrulama ile veri aktarımı
+
+Çalışma Akışı:
+1. Firebase bağlantısı başlatılır
+2. MQTT broker'a bağlanır ve topicler dinlenir
+3. PC'den gelen veriler JSON formatında alınır
+4. Veriler önce yerel dosyaya kaydedilir
+5. Senkronizasyon bayrağı geldiğinde veriler Firebase'e aktarılır
+
+Hata Yönetimi:
+- JSON format kontrolleri
+- Dosya okuma/yazma hata yönetimi
+- Bağlantı kopması durumları
+- Veri tutarlılığı kontrolleri
+
+Güvenlik Özellikleri:
+- Firebase kimlik doğrulama
+- Yerel veri yedekleme
+- Veri bütünlüğü kontrolleri
+
+Gereksinimler:
+- paho-mqtt kütüphanesi
+- firebase-admin kütüphanesi
+- Firebase servis hesabı kimlik bilgileri (JSON)
+- Çalışan bir MQTT broker
+"""
 import sys
 import json
 import paho.mqtt.client as mqtt
