@@ -1,54 +1,54 @@
 """
-Firebase ve MQTT Veri Senkronizasyon Sistemi
+Firebase and MQTT Data Synchronization System
 ------------------------------------------
 
-Bu program, PC ve Firebase Realtime Database arasında veri senkronizasyonunu 
-sağlayan bir ara katman olarak çalışır. MQTT protokolü üzerinden gelen verileri
-alır, işler ve Firebase veritabanına aktarır.
+This program works as a middleware that provides data synchronization between 
+PC and Firebase Realtime Database. It receives data via MQTT protocol,
+processes it and transfers it to the Firebase database.
 
-Sistem Özellikleri:
-1. MQTT İletişimi:
-   - PC'den gelen JSON verilerini dinler
-   - İki ayrı topic üzerinden haberleşme:
-     * pc-to-rpi-data: JSON verilerinin alındığı kanal
-     * pc-to-rpi-flag: Senkronizasyon tetikleyici kanalı
-   - Broker Bağlantısı:
+System Features:
+1. MQTT Communication:
+   - Listens to JSON data coming from PC
+   - Communication over two separate topics:
+     * pc-to-rpi-data: Channel where JSON data is received
+     * pc-to-rpi-flag: Synchronization trigger channel
+   - Broker Connection:
      * IP: 192.168.207.93
      * Port: 9999
 
-2. Dosya İşlemleri:
-   - JSON verilerini yerel dosyada saklar (password_rpi.json)
-   - Mevcut kullanıcı verilerini koruyarak güncelleme yapar
-   - UTF-8 karakter desteği ile çoklu dil desteği
+2. File Operations:
+   - Stores JSON data in local file (password_rpi.json)
+   - Updates while preserving existing user data
+   - Multi-language support with UTF-8 character support
 
-3. Firebase Entegrasyonu:
-   - Realtime Database bağlantısı
-   - Otomatik veri senkronizasyonu
-   - Güvenli kimlik doğrulama ile veri aktarımı
+3. Firebase Integration:
+   - Realtime Database connection
+   - Automatic data synchronization
+   - Secure data transfer with authentication
 
-Çalışma Akışı:
-1. Firebase bağlantısı başlatılır
-2. MQTT broker'a bağlanır ve topicler dinlenir
-3. PC'den gelen veriler JSON formatında alınır
-4. Veriler önce yerel dosyaya kaydedilir
-5. Senkronizasyon bayrağı geldiğinde veriler Firebase'e aktarılır
+Workflow:
+1. Firebase connection is initiated
+2. Connects to MQTT broker and listens to topics
+3. Data from PC is received in JSON format
+4. Data is first saved to local file
+5. When synchronization flag is received, data is transferred to Firebase
 
-Hata Yönetimi:
-- JSON format kontrolleri
-- Dosya okuma/yazma hata yönetimi
-- Bağlantı kopması durumları
-- Veri tutarlılığı kontrolleri
+Error Management:
+- JSON format checks
+- File read/write error handling
+- Connection loss situations
+- Data consistency checks
 
-Güvenlik Özellikleri:
-- Firebase kimlik doğrulama
-- Yerel veri yedekleme
-- Veri bütünlüğü kontrolleri
+Security Features:
+- Firebase authentication
+- Local data backup
+- Data integrity checks
 
-Gereksinimler:
-- paho-mqtt kütüphanesi
-- firebase-admin kütüphanesi
-- Firebase servis hesabı kimlik bilgileri (JSON)
-- Çalışan bir MQTT broker
+Requirements:
+- paho-mqtt library
+- firebase-admin library
+- Firebase service account credentials (JSON)
+- A running MQTT broker
 """
 import sys
 import json
@@ -56,33 +56,33 @@ import paho.mqtt.client as mqtt
 import firebase_admin
 from firebase_admin import credentials, db
 
-# MQTT Ayarları
+# MQTT Settings
 MQTT_HOST = "192.168.207.93"
 MQTT_PORT = 9999
-DATA_TOPIC = "pc-to-rpi-data"  # JSON verilerinin gönderildiği konu
-FLAG_TOPIC = "pc-to-rpi-flag"  # İşlem tetikleyici bayrak konusu
-FLAG_MESSAGE = "send_start_flag"  # JSON verisinin hazır olduğunu belirten bayrak
+DATA_TOPIC = "pc-to-rpi-data"  # Topic where JSON data is sent
+FLAG_TOPIC = "pc-to-rpi-flag"  # Process trigger flag topic
+FLAG_MESSAGE = "send_start_flag"  # Flag indicating JSON data is ready
 
-# Firebase'i Başlatma
+# Initialize Firebase
 FIREBASE_CRED_PATH = 'muhtas-2990b-firebase-adminsdk-4hyi4-b20232f6db.json'
 FIREBASE_DB_URL = 'https://muhtas-2990b-default-rtdb.firebaseio.com/'
 
 def initialize_firebase():
-    """Firebase bağlantısını başlatır."""
+    """Initializes Firebase connection."""
     cred = credentials.Certificate(FIREBASE_CRED_PATH)
     firebase_admin.initialize_app(cred, {'databaseURL': FIREBASE_DB_URL})
 
 def read_json_file(filename='password_rpi.json'):
-    """Belirtilen JSON dosyasını okur ve içeriğini döndürür."""
+    """Reads the specified JSON file and returns its contents."""
     try:
         with open(filename, 'r', encoding='utf-8') as file:
             return json.load(file)
     except (FileNotFoundError, json.JSONDecodeError):
-        print(f"Hata: {filename} dosyası okunamadı.")
+        print(f"Error: Could not read {filename} file.")
         return {}
 
 def write_json_file(data, filename='password_rpi.json'):
-    """JSON verisini belirtilen dosyaya yazar."""
+    """Writes JSON data to the specified file."""
     user_id = list(data.keys())[0]
     json_data = read_json_file(filename)
     
@@ -90,55 +90,55 @@ def write_json_file(data, filename='password_rpi.json'):
         json_data[user_id] = data[user_id]
         with open(filename, "w", encoding="utf-8") as file:
             json.dump(json_data, file, indent=4, ensure_ascii=False)
-        print(f"Kullanıcı {user_id} güncellendi.")
+        print(f"User {user_id} updated.")
     else:
-        print(f"Hata: Kullanıcı ID {user_id} dosyada bulunamadı!")
+        print(f"Error: User ID {user_id} not found in file!")
 
 def push_data_to_firebase():
-    """JSON verisini Firebase Realtime Database'e yükler."""
+    """Uploads JSON data to Firebase Realtime Database."""
     json_data = read_json_file()
     if json_data:
         db.reference('/').set(json_data)
-        print("JSON verisi başarıyla Firebase'e yüklendi.")
+        print("JSON data successfully uploaded to Firebase.")
     else:
-        print("Hata: Firebase'e yüklenecek veri bulunamadı!")
+        print("Error: No data found to upload to Firebase!")
 
 def on_message(client, userdata, msg):
-    """MQTT mesajlarını işler."""
+    """Processes MQTT messages."""
     payload = msg.payload.decode()
-    print(f"Mesaj alındı: {msg.topic} -> {payload}")
+    print(f"Message received: {msg.topic} -> {payload}")
     
     if msg.topic == DATA_TOPIC:
         try:
             message_data = json.loads(payload)
             write_json_file(message_data)
-            print("JSON verisi başarıyla kaydedildi.")
+            print("JSON data successfully saved.")
         except json.JSONDecodeError:
-            print("Hata: Geçersiz JSON verisi alındı.")
+            print("Error: Invalid JSON data received.")
     elif msg.topic == FLAG_TOPIC and payload == FLAG_MESSAGE:
-        print("Bayrak mesajı alındı, Firebase'e veri gönderiliyor...")
+        print("Flag message received, sending data to Firebase...")
         push_data_to_firebase()
 
 def main():
-    """Ana program akışı."""
+    """Main program flow."""
     initialize_firebase()
     
     client = mqtt.Client()
     client.on_message = on_message
     
     if client.connect(MQTT_HOST, MQTT_PORT, 60) != 0:
-        print("MQTT broker'a bağlanılamadı!")
+        print("Could not connect to MQTT broker!")
         sys.exit(1)
     
     client.subscribe([(DATA_TOPIC, 0), (FLAG_TOPIC, 0)])
     
     try:
-        print("Mesajlar dinleniyor... (Çıkış için CTRL+C)")
+        print("Listening for messages... (Press CTRL+C to exit)")
         client.loop_forever()
     except KeyboardInterrupt:
-        print("Çıkış yapılıyor...")
+        print("Exiting...")
     finally:
-        print("MQTT bağlantısı kapatılıyor...")
+        print("Closing MQTT connection...")
         client.disconnect()
 
 if __name__ == "__main__":
