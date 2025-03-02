@@ -1,51 +1,50 @@
 """
-RFID ve PIN Tabanlı Kimlik Doğrulama Sistemi
+RFID and PIN Based Authentication System
 -------------------------------------------
 
-Bu program, Raspberry Pi üzerinde çalışan RFID ve PIN tabanlı bir kimlik doğrulama
-sistemini yönetir. Firebase ve MQTT protokolü kullanılarak çeşitli cihazlar arasında
-güvenli bir kimlik doğrulama sağlar.
+This program manages an RFID and PIN based authentication system running on Raspberry Pi.
+It provides secure authentication between various devices using Firebase and MQTT protocol.
 
-Sistem Özellikleri:
-1. Firebase Entegrasyonu:
-   - Kullanıcı verilerini Firebase veritabanından çeker
-   - Verileri yerel JSON dosyalarında saklar
+System Features:
+1. Firebase Integration:
+   - Pulls user data from Firebase database
+   - Stores data in local JSON files
 
-2. MQTT İletişimi:
-   - PC ile Raspberry Pi arasında veri alışverişi sağlar
-   - RFID ve PIN verilerini dinler
-   - Doğrulama sonuçlarını iletir
+2. MQTT Communication:
+   - Enables data exchange between PC and Raspberry Pi
+   - Listens for RFID and PIN data
+   - Transmits authentication results
    - Broker IP: 192.168.13.93, Port: 9999
 
-3. LED Göstergeler:
-   - RFID LED (GPIO 17): RFID doğrulaması başarılı
-   - PIN LED (GPIO 22): PIN doğrulaması başarılı
-   - Hata LED (GPIO 4): Doğrulama hatası
+3. LED Indicators:
+   - RFID LED (GPIO 17): RFID authentication successful
+   - PIN LED (GPIO 22): PIN authentication successful
+   - Error LED (GPIO 4): Authentication error
 
-4. Güvenlik Doğrulamaları:
-   - RFID kart kontrolü
-   - PIN doğrulaması
-   - İki faktörlü kimlik doğrulama (RFID + PIN)
+4. Security Verifications:
+   - RFID card verification
+   - PIN authentication
+   - Two-factor authentication (RFID + PIN)
 
-Çalışma Akışı:
-1. Program MQTT broker'a bağlanır
-2. Firebase'den kullanıcı verilerini çeker
-3. RFID okuyucudan gelen verileri kontrol eder
-4. PIN girişlerini doğrular
-5. Sonuçları LED'ler ile gösterir
-6. Doğrulama başarılı ise kullanıcı verilerini PC'ye iletir
+Workflow:
+1. Program connects to MQTT broker
+2. Pulls user data from Firebase
+3. Checks data from RFID reader
+4. Verifies PIN entries
+5. Shows results with LEDs
+6. If authentication is successful, transmits user data to PC
 
-Gereksinimler:
-- paho-mqtt kütüphanesi
-- firebase-admin kütüphanesi
-- gpiozero kütüphanesi
-- Firebase servis hesabı kimlik bilgileri (JSON)
-- Çalışan bir MQTT broker
+Requirements:
+- paho-mqtt library
+- firebase-admin library
+- gpiozero library
+- Firebase service account credentials (JSON)
+- Working MQTT broker
 
-Hata Yönetimi:
-- Tüm kritik işlemler try-except blokları ile korunur
-- Hata durumları konsola loglanır
-- LED'ler ile görsel geri bildirim sağlanır
+Error Management:
+- All critical operations are protected with try-except blocks
+- Error states are logged to console
+- Visual feedback is provided with LEDs
 
 """
 
@@ -58,16 +57,16 @@ from firebase_admin import credentials, db
 from gpiozero import LED
 from time import sleep
 
-# LED Tanımları
+# LED Definitions
 led_rfid = LED(17)
 led_pin = LED(22)
 led_error = LED(4)
 
-# Firebase'in başlatıldığını kontrol eden flag
+# Flag to check if Firebase is initialized
 firebase_initialized = False
 
 def initialize_firebase():
-    """ Firebase bağlantısını başlatır. """
+    """ Initializes Firebase connection. """
     global firebase_initialized
     if not firebase_initialized:
         cred = credentials.Certificate('muhtas-2990b-firebase-adminsdk-4hyi4-b20232f6db.json')
@@ -77,7 +76,7 @@ def initialize_firebase():
         firebase_initialized = True
 
 def pull_data():
-    """ Firebase'den veriyi çeker ve JSON dosyasına kaydeder. """
+    """ Pulls data from Firebase and saves it to a JSON file. """
     initialize_firebase()
     try:
         ref = db.reference('/')
@@ -85,14 +84,14 @@ def pull_data():
         if data:
             with open('password_rpi.json', 'w', encoding='utf-8') as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
-            print("Veri başarıyla çekildi ve 'password_rpi.json' dosyasına kaydedildi.")
+            print("Data successfully pulled and saved to 'password_rpi.json' file.")
         else:
-            print("Uyarı: Firebase'den boş veri alındı.")
+            print("Warning: Empty data received from Firebase.")
     except Exception as e:
-        print(f"Hata: Firebase verisi çekilirken bir hata oluştu -> {e}")
+        print(f"Error: An error occurred while pulling Firebase data -> {e}")
 
 def check_rfid(user_id):
-    """ Gelen RFID verisini kontrol eder. """
+    """ Checks the incoming RFID data. """
     try:
         with open("password_rpi.json", "r") as f:
             data = json.load(f)
@@ -104,22 +103,22 @@ def check_rfid(user_id):
                 json.dump(output_data, new_file, indent=4)
             return True
     except Exception as e:
-        print(f"Hata: RFID kontrolü sırasında bir hata oluştu -> {e}")
+        print(f"Error: An error occurred during RFID verification -> {e}")
     return False
 
 def read_pin_from_tmp():
-    """ tmp_password.json dosyasından pin bilgisini okur. """
+    """ Reads pin information from tmp_password.json file. """
     try:
         with open("tmp_password.json", "r") as file:
             data = json.load(file)
             key = list(data.keys())[0]
             return str(data[key].get("pin", ""))
     except Exception as e:
-        print(f"Hata: PIN okuma sırasında bir hata oluştu -> {e}")
+        print(f"Error: An error occurred while reading PIN -> {e}")
         return None
 
 def send_data_to_pc(client):
-    """ JSON dosyasını PC'ye MQTT üzerinden gönderir. """
+    """ Sends JSON file to PC over MQTT. """
     try:
         with open('tmp_password.json', 'r') as file:
             data = json.load(file)
@@ -127,18 +126,18 @@ def send_data_to_pc(client):
         data_out = json.dumps(data)
         client.publish("rpi-to-pc-data", data_out, qos=0)
         client.publish("rpi-to-pc-flag", "pull-end-flag", qos=0)
-        print("Veri başarıyla PC'ye gönderildi.")
+        print("Data successfully sent to PC.")
     except Exception as e:
-        print(f"Hata: MQTT gönderimi sırasında bir hata oluştu -> {e}")
+        print(f"Error: An error occurred during MQTT transmission -> {e}")
 
 def led_blink(led, duration=2):
-    """ Belirtilen LED'i belirli bir süre yakıp söndürür. """
+    """ Turns on and off the specified LED for a certain duration. """
     led.on()
     sleep(duration)
     led.off()
 
 def on_message(client, userdata, msg):
-    """ MQTT'den gelen mesajları işler. """
+    """ Processes messages coming from MQTT. """
     payload = msg.payload.decode()
 
     if msg.topic == "pc-to-rpi-flag" and payload == "pull-start-flag":
@@ -146,25 +145,25 @@ def on_message(client, userdata, msg):
 
     elif msg.topic == "rfid":
         if not check_rfid(payload):
-            led_blink(led_error)  # Hatalı RFID
+            led_blink(led_error)  # Invalid RFID
             return
-        led_blink(led_rfid)  # Geçerli RFID
+        led_blink(led_rfid)  # Valid RFID
 
     elif msg.topic == "pin":
         correct_pin = read_pin_from_tmp()
         if correct_pin is None or payload != correct_pin:
-            led_blink(led_error)  # Yanlış PIN
+            led_blink(led_error)  # Wrong PIN
             return
-        led_blink(led_pin)  # Doğru PIN
+        led_blink(led_pin)  # Correct PIN
         send_data_to_pc(client)
 
 def start_mqtt():
-    """ MQTT bağlantısını başlatır ve mesajları dinler. """
+    """ Starts MQTT connection and listens for messages. """
     client = paho.Client()
     client.on_message = on_message
 
     if client.connect("192.168.13.93", 9999, 60) != 0:
-        print("MQTT broker'a bağlanılamadı!")
+        print("Could not connect to MQTT broker!")
         sys.exit(1)
 
     client.subscribe("pc-to-rpi-flag", qos=0)
@@ -172,12 +171,12 @@ def start_mqtt():
     client.subscribe("pin", qos=0)
 
     try:
-        print("MQTT dinleyici başlatıldı, mesaj bekleniyor...")
+        print("MQTT listener started, waiting for messages...")
         client.loop_forever()
     except KeyboardInterrupt:
-        print("Çıkış yapılıyor...")
+        print("Exiting...")
     finally:
-        print("MQTT bağlantısı sonlandırılıyor...")
+        print("Terminating MQTT connection...")
         client.disconnect()
 
 if __name__ == "__main__":
