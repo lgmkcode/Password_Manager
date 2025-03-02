@@ -18,12 +18,12 @@ const QString TOPIC_PC_TO_RPI_DATA = "pc-to-rpi-data";
 const QString TOPIC_RPI_TO_PC_DATA = "rpi-to-pc-data";
 
 // UI Messages
-const QString MSG_WELCOME = "Password manager sistemine hoş geldiniz\n"
-                            "Şifrelerinizi indirmek için download password butonuna basın ve yönergeleri takip edin.";
-const QString MSG_UPLOAD_SUCCESS = "Şifreleriniz database'e gönderilmiştir";
-const QString MSG_DOWNLOAD_PROMPT = "Kartınızı okutun ardından pin kodunuzu giriniz.";
-const QString MSG_SAVE_SUCCESS = "Şifreleriniz kaydedildi\n"
-                                 "Upload password butonuna basarak şifrelerinizi database'e gönderebilirsiniz.";
+const QString MSG_WELCOME = "Welcome to the password manager system\n"
+                            "Press the download password button to download your passwords and follow the instructions.";
+const QString MSG_UPLOAD_SUCCESS = "Your passwords have been sent to the database";
+const QString MSG_DOWNLOAD_PROMPT = "Scan your card then enter your PIN code.";
+const QString MSG_SAVE_SUCCESS = "Your passwords have been saved\n"
+                                 "You can send your passwords to the database by pressing the Upload password button.";
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -46,12 +46,12 @@ void MainWindow::setupMqttClient()
     mqttClient->setHostname(MQTT_HOST);
     mqttClient->setPort(MQTT_PORT);
 
-    // MQTT bağlantısı kurulduktan sonra topic'lere abone ol
+    // Subscribe to topics after MQTT connection is established
     connect(mqttClient, &QMqttClient::connected, this, [this]{
         qDebug() << "MQTT Client connected.";
         qDebug() << "MQTT Client State:" << mqttClient->state();
 
-        // Bağlantı kurulduktan sonra topic'lere abone ol
+        // Subscribe to topics after connection is established
         subscribeToTopics({
             TOPIC_PC_TO_RPI_FLAG,
             TOPIC_PC_TO_RPI_DATA,
