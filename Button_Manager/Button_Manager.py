@@ -1,27 +1,25 @@
 """
-Raspberry Pi PIN Okuma ve MQTT İle Gönderme Sistemi
+
+Raspberry Pi PIN Reading and MQTT Sending System
 ------------------------------------------------
+This program reads a 4-digit PIN code from physical buttons on the Raspberry Pi
+and sends this code to an MQTT broker.
+Features:
+- Uses 4 physical buttons (GPIO pins: 16, 26, 6, 5)
+- Each button represents a digit (1, 2, 3, 4 respectively)
+- A maximum 4-digit PIN code can be created
+- The created PIN code is automatically sent to the MQTT broker
+- Bounce time prevents noise in button readings
+Usage:
+1. When the program starts, it connects to the MQTT broker
+2. The user creates a 4-digit PIN code by pressing physical buttons
+3. When all 4 digits are completed, the code is automatically sent to the MQTT broker
+4. After the PIN code is sent, the system is ready for a new PIN code
+Requirements:
+- gpiozero library
+- paho-mqtt library
+- A running MQTT broker (default port: 9999)
 
-Bu program, Raspberry Pi üzerindeki fiziksel butonlardan 4 haneli bir PIN kodu okur
-ve bu kodu MQTT broker'a gönderir. 
-
-Özellikler:
-- 4 adet fiziksel buton kullanır (GPIO pinleri: 16, 26, 6, 5)
-- Her buton bir rakamı temsil eder (sırasıyla 1, 2, 3, 4)
-- Maksimum 4 haneli bir PIN kodu oluşturulabilir
-- Oluşturulan PIN kodu otomatik olarak MQTT broker'a gönderilir
-- Bounce time ile buton okumalarındaki gürültü engellenir
-
-Kullanım:
-1. Program başlatıldığında MQTT broker'a bağlanır
-2. Kullanıcı fiziksel butonlara basarak 4 haneli PIN kodunu oluşturur
-3. 4 hane tamamlandığında, kod otomatik olarak MQTT broker'a gönderilir
-4. PIN kodu gönderildikten sonra sistem yeni bir PIN kodu için hazır hale gelir
-
-Gereksinimler:
-- gpiozero kütüphanesi
-- paho-mqtt kütüphanesi
-- Çalışan bir MQTT broker (varsayılan port: 9999)
 """
 
 from gpiozero import Button
@@ -67,25 +65,24 @@ class PinReader:
             self.buttons.append(button)
 
 def main():
-    # Pin okuyucu nesnesini oluştur
+    # Create PIN reader object
     pin_reader = PinReader()
     
-    # MQTT bağlantısını kur
+    # Set up MQTT connection
     if not pin_reader.setup_mqtt():
         sys.exit(1)
     
-    # Butonları ayarla
+    # Set up buttons
     pin_reader.setup_buttons()
     
-    # Kullanıcıya bilgi ver
-    print("4 haneli sayıyı oluşturmak için butonlara basın...")
+    # Inform the user
+    print("Press the buttons to create a 4-digit number...")
     
-    # Programı çalışır halde tut
+    # Keep the program running
     try:
         pause()
     except KeyboardInterrupt:
-        print("\nProgram sonlandırılıyor...")
+        print("\nProgram is terminating...")
         sys.exit(0)
-
 if __name__ == "__main__":
     main()
