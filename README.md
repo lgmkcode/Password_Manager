@@ -63,8 +63,7 @@ The PCB includes:
 - Buzzer
 - Required resistors
 
-![PCB Design](images/pcb_design.jpg)
-![Assembled PCB](images/pcb_assembled.jpg)
+![PCB Design](images/pcb.jpeg)
 
 ## Working Principle
 
