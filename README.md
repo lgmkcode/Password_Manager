@@ -115,8 +115,6 @@ The desktop application provides a clean and user-friendly interface for users t
 - Buzzer
 - Custom Designed Printed Circuit Board (PCB)
 
-![Hardware Components](images/hardware_components.jpg)
-
 #### Software
 - Raspberry Pi OS
 - Python 3.x
@@ -140,8 +138,6 @@ The desktop application provides a clean and user-friendly interface for users t
 3. Upload Firebase service account credentials (JSON) to Raspberry Pi.
 
 4. Copy project files to Raspberry Pi.
-
-![Raspberry Pi Setup](images/raspberry_pi_setup.jpg)
 
 ### Desktop Application Setup
 
@@ -175,8 +171,6 @@ The desktop application provides a clean and user-friendly interface for users t
 - Data integrity checks
 - Secure communication with OpenSSL
 
-![Security Architecture](images/security_architecture.png)
-
 ## MQTT Topics
 
 - `rfid`: Carries RFID card UID
@@ -196,16 +190,3 @@ The project has been successfully completed and achieved the following goals:
 - User-friendly interface
 - Reliable hardware integration
 
-![Completed Project](images/completed_project.jpg)
-
-## Contributing
-
-[Contributing instructions to be added here]
-
-## License
-
-[License information to be added here]
-
-## Contact
-
-[Contact information to be added here]
