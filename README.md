@@ -50,7 +50,7 @@ The Password Manager System consists of the following components:
    - SPI (RFID reader communication)
    - GPIO (Button and LED control)
 
-![System Architecture Diagram](images/system_architecture.png)
+![System Architecture Diagram(will be added)](images/system_architecture.png)
 
 ## PCB Design
 
@@ -77,7 +77,7 @@ The PCB includes:
 7. If two-factor authentication is successful, the user's passwords are retrieved from Firebase and sent to the desktop application.
 8. The user can view, edit, and upload their passwords back to Firebase using the "Upload Password" button.
 
-![Workflow Diagram](images/workflow_diagram.png)
+![Workflow Diagram(will be added)](images/workflow_diagram.png)
 
 ## User Interface
 
@@ -179,8 +179,6 @@ The desktop application provides a clean and user-friendly interface for users t
 - `pc-to-rpi-data`: JSON data from PC to Raspberry Pi
 - `rpi-to-pc-data`: JSON data from Raspberry Pi to PC
 - `rpi-to-pc-flag`: Flag messages from Raspberry Pi to PC
-
-![MQTT Communication Diagram](images/mqtt_communication.png)
 
 ## Project Results
 
