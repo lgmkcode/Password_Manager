@@ -83,8 +83,7 @@ The PCB includes:
 
 The desktop application provides a clean and user-friendly interface for users to easily manage their passwords.
 
-![Desktop Application Main Screen](images/desktop_app_main.png)
-![Password View Screen](images/password_view.png)
+![Desktop Application Main Screen](images/desktop_app_ui.png)
 
 ## Technologies and Programming Languages
 
