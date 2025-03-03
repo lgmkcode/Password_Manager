@@ -4,6 +4,7 @@
 
 The Password Manager System is a hardware-supported password management system developed as a proof of concept for the Engineering Design 1 course at university. This project aims to demonstrate the concept of secure password storage and management in today's digital world where we use numerous applications and systems daily.
 The system implements a basic two-factor authentication mechanism using RFID cards and PIN codes to showcase how authorized access can be controlled. While this project is not intended to provide a completely secure solution for real-world implementation, it serves as an educational prototype to explore the challenges and approaches in password management security.
+
 With the increasing number of applications and systems we use in daily life, secure storage of passwords has become a significant challenge. This project was developed to demonstrate a potential approach to this problem within the scope of an academic engineering design course.
 
 <p float="left">
