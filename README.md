@@ -6,7 +6,7 @@ The Password Manager System is a hardware-supported password management system d
 
 With the increasing number of applications and systems we use in daily life, secure storage of passwords has become a significant challenge. This project was developed to provide a solution to this problem.
 
-![Project Overview](images/project_overview_0.jpg)  ![Project Overview](images/project_overview_1.jpg)
+![Project Overview](images/project_overview_0.jpeg)  ![Project Overview](images/project_overview_1.jpeg)
 
 ## Features
 
